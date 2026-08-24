@@ -16,8 +16,8 @@ let package = Package(
     ],
     dependencies: [
         .package(
-            url: "https://github.com/7ka-hiira/AzooKeyKanaKanjiConverter",
-            branch: "develop",
+            url: "https://github.com/akku1139/AzooKeyKanaKanjiConverter",
+            branch: "fix/loudstxt3-oob-guard",
             traits: [.trait(name: "Zenzai", condition: .when(traits: ["ZenzaiSupport"]))]),
         .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.27.0"),
     ],
