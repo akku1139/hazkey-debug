@@ -66,6 +66,10 @@ jobs:
             build-essential gettext fakeroot libfcitx5core-dev libfcitx5config-dev libfcitx5utils-dev \
             ninja-build qt6-base-dev qt6-tools-dev qt6-tools-dev-tools libqt6widgets6 libqt6gui6 qt6-l10n-tools libglx-dev libgl1-mesa-dev libxkbcommon-dev
 
+      - name: Install libobjc (Swift link dependency)
+        run: |
+          sudo apt-get install -y libobjc-13-dev || sudo apt-get install -y libobjc-14-dev
+
       - name: Install Dependencies (protobuf)
         if: ${{ !matrix.static_protobuf }}
         run: |
