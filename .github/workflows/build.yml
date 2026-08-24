@@ -165,7 +165,7 @@ jobs:
       - name: Create tar.gz archive
         run: |
           cd ${{ github.workspace }}/workdir
-          tar -czvf ${{ github.workspace }}/packages/fcitx5-hazkey-${{ github.ref_name }}-${{ matrix.arch }}.tar.gz ./usr
+          tar -czvf ${{ github.workspace }}/packages/fcitx5-hazkey-${{ github.sha }}-${{ matrix.arch }}.tar.gz ./usr
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v6
