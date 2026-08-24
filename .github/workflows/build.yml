@@ -2,6 +2,8 @@ name: Build
 
 on:
   push:
+    branches:
+      - "**"
     tags:
       - "*"
   workflow_dispatch:
@@ -12,11 +14,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu-22.04
-            label: ubuntu-22.04
-            arch: x86_64
-            swift_url: https://download.swift.org/swift-6.2-release/ubuntu2204/swift-6.2-RELEASE/swift-6.2-RELEASE-ubuntu22.04.tar.gz
-            static_protobuf: false
           - runner: ubuntu-24.04
             label: ubuntu-24.04
             arch: x86_64
@@ -27,11 +24,6 @@ jobs:
             arch: aarch64
             swift_url: https://download.swift.org/swift-6.2-release/ubuntu2404-aarch64/swift-6.2-RELEASE/swift-6.2-RELEASE-ubuntu24.04-aarch64.tar.gz
             static_protobuf: false
-          - runner: ubuntu-22.04
-            label: ubuntu-22.04-static_protobuf
-            arch: x86_64
-            swift_url: https://download.swift.org/swift-6.2-release/ubuntu2204/swift-6.2-RELEASE/swift-6.2-RELEASE-ubuntu22.04.tar.gz
-            static_protobuf: true
           - runner: ubuntu-24.04-arm
             label: ubuntu-24.04-static_protobuf
             arch: aarch64
@@ -176,3 +168,30 @@ jobs:
         with:
           name: fcitx5-hazkey-${{ matrix.label }}-${{ matrix.arch }}
           path: ${{ github.workspace }}/packages/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: debug-${{ github.sha }}
+          name: hazkey-server debug build (${{ github.sha }})
+          body: |
+            Debug build of hazkey-server with fixes for:
+            - SIGILL crash on out-of-range candidate index in `completePrefix()` (state.swift)
+            - Connection storm / freeze caused by stale poll fd handling in `SocketManager` (socketManager.swift)
+
+            Based on upstream 7ka-Hiira/hazkey@${{ github.sha }}.
+            **Note**: this is a temporary debug build for testing, not an official release.
+          files: artifacts/*
+

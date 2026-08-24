@@ -180,7 +180,15 @@ class HazkeyServerState {
     }
 
     func completePrefix(candidateIndex: Int) -> Hazkey_ResponseEnvelope {
-        if let completedCandidate = currentCandidateList?[candidateIndex] {
+        // Guard against out-of-bounds access: currentCandidateList?[candidateIndex]
+        // traps (SIGILL via ud2) when candidateIndex is negative or >= count,
+        // which crashes the whole server. Return a failed response instead.
+        if let list = currentCandidateList,
+            !list.isEmpty,
+            candidateIndex >= 0,
+            candidateIndex < list.count,
+            let completedCandidate = list[candidateIndex] as Candidate?
+        {
             composingText.value.prefixComplete(composingCount: completedCandidate.composingCount)
             converter.setCompletedData(completedCandidate)
             converter.updateLearningData(completedCandidate)

@@ -139,23 +139,37 @@ class SocketManager {
             }
 
             // Check if server socket has a new connection
-            if pollFds[0].revents & Int16(POLLIN) != 0 {
-                handleNewConnection()
-            }
+            // NOTE: must be processed AFTER client event handling below, because
+            // handleNewConnection() may replace currentClientFd and invalidate
+            // pollFds[2], which belongs to the previous client.
+            let newConnection = pollFds[0].revents & Int16(POLLIN) != 0
 
-            // Check if current client has data
-            if pollFds.count > 2, let clientFd = currentClientFd {
+            // Check if current client has data (pollFds[2] corresponds to the
+            // client that was current when poll() was called)
+            var processedClientEvent = false
+            if pollFds.count > 2 {
+                let polledFd = pollFds[2].fd
                 let clientEvents = Int32(pollFds[2].revents)
 
-                if clientEvents & POLLHUP != 0 || clientEvents & POLLERR != 0 {
-                    NSLog("Client disconnected or error: \(clientFd)")
-                    closeClient(clientFd)
-                    continue
-                }
+                // Only handle events for the fd that was actually polled; skip
+                // silently if the entry was already replaced by a new connection
+                // in this iteration.
+                if !newConnection || polledFd == currentClientFd {
+                    processedClientEvent = true
 
-                if clientEvents & POLLIN != 0 {
-                    handleClientData(clientFd)
+                    if clientEvents & POLLHUP != 0 || clientEvents & POLLERR != 0 {
+                        NSLog("Client disconnected or error: \(polledFd)")
+                        closeClient(polledFd)
+                    } else if clientEvents & POLLIN != 0 {
+                        handleClientData(polledFd)
+                    }
                 }
+            }
+
+            // Accept new connections after finishing work for the old client
+            if newConnection {
+                handleNewConnection()
+                _ = processedClientEvent
             }
         }
     }
